@@ -8,6 +8,7 @@
       type="module"
       src="https://cdnjs.cloudflare.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"
     ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script type="module">
       import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js';
       window.THREE = THREE; // Explicitně přiřazení THREE do globálního objektu
@@ -72,7 +73,6 @@
   </head>
   <body>
     <h3>Watch band configurator 3D</h3>
-    <button id="captureButton">Generovat obrázek</button>
     <img id="capturedImage" style="display: none" />
     <model-viewer
       id="watchModel"
@@ -338,21 +338,59 @@
       syncSliderAndInput('offsetYSlider', 'offsetYInput', 'offsetY');
       syncSliderAndInput('scaleSlider', 'scaleInput', 'scale');
       syncSliderAndInput('rotationSlider', 'rotationInput', 'rotation');
+    </script>
+    
+    <button onclick="captureImage()">Export to Image</button>
+    <button onclick="exportToPDF()">Export to PDF</button>
 
-      // Capture image
-      document.getElementById('captureButton').addEventListener('click', () => {
-        const modelViewer = document.querySelector('#watchModel');
+    <script>
+      function captureImage() {
+        const modelViewer = document.getElementById('watchModel');
 
-        if (modelViewer) {
-          // Capture the model as an image
-          const imageUrl = modelViewer.capture('image/png'); // Capture in PNG format
+        modelViewer.addEventListener('load', function () {
+          const imageData = modelViewer.toDataURL('image/png'); // Získání obrázku ve formátu PNG
 
-          // Display the captured image
-          const imgElement = document.getElementById('capturedImage');
-          imgElement.src = imageUrl;
-          imgElement.style.display = 'block'; // Show the captured image
+          const link = document.createElement('a');
+          link.href = imageData;
+          link.download = '3d-model.png'; // Stažení obrázku ve formátu PNG
+          link.click();
+        });
+
+        if (modelViewer.hasAttribute('src')) {
+          const imageData = modelViewer.toDataURL('image/png');
+          const link = document.createElement('a');
+          link.href = imageData;
+          link.download = '3d-model.png';
+          link.click();
         }
-      });
+      }
+
+      function exportToPDF() {
+        const modelViewer = document.getElementById('watchModel');
+
+        modelViewer.addEventListener('load', function () {
+          const imageData = modelViewer.toDataURL('image/png'); // Pořídíme snímek modelu
+
+          // Vytvoření PDF pomocí jsPDF
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+
+          // Přidání obrázku do PDF, nastavíme velikost obrázku v PDF (šířka x výška)
+          doc.addImage(imageData, 'PNG', 10, 10, 180, 160); // Změňte šířku a výšku podle potřeby
+
+          // Umožníme uživateli stáhnout PDF
+          doc.save('3d-model.pdf');
+        });
+
+        // Pokud je model již načtený, rovnou vytvoříme PDF
+        if (modelViewer.hasAttribute('src')) {
+          const imageData = modelViewer.toDataURL('image/png');
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          doc.addImage(imageData, 'PNG', 10, 10, 180, 160); // Upravte šířku/výšku podle potřeby
+          doc.save('3d-model.pdf');
+        }
+      }
     </script>
   </body>
 </html>
