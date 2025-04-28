@@ -12,6 +12,7 @@
       import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js';
       window.THREE = THREE;
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -27,16 +28,17 @@
       }
 
       .tabs {
-      width: 200px;
-      
-        }
+  width: 220px;
+  max-height: 90vh;
+  overflow-y: auto;   /* jen svislý scroll */
+  overflow-x: visible; /* pokud něco přesahuje šířku, bude vidět */
+}
 
       .tab {
         padding: 5px;
         margin: 5px;
         width: 200px;
         text-align: left;
-
       }
 
       .controls label {
@@ -508,5 +510,58 @@
     });
   });
     </script>
+     <button id="savePNG" onclick="captureImage()">Export to Image</button>
+     <button id="savePDF" onclick="exportToPDF()">Export to PDF</button>
+ 
+     <script>
+      
+       function captureImage() {
+         const modelViewer = document.getElementById('watchModel');
+ 
+         modelViewer.addEventListener('load', function () {
+           const imageData = modelViewer.toDataURL('image/jpg'); // Získání obrázku ve formátu PNG
+ 
+           const link = document.createElement('a');
+           link.href = imageData;
+           link.download = 'reminek.jpg'; // Stažení obrázku ve formátu PNG
+           link.click();
+         });
+ 
+         if (modelViewer.hasAttribute('src')) {
+           const imageData = modelViewer.toDataURL('image/jpg');
+           const link = document.createElement('a');
+           link.href = imageData;
+           link.download = 'reminek.jpg';
+           link.click();
+         }
+       }
+ 
+       function exportToPDF() {
+         const modelViewer = document.getElementById('watchModel');
+ 
+         modelViewer.addEventListener('load', function () {
+           const imageData = modelViewer.toDataURL('image/jpg'); // Pořídíme snímek modelu
+ 
+           // Vytvoření PDF pomocí jsPDF
+           const { jsPDF } = window.jspdf;
+           const doc = new jsPDF();
+ 
+           // Přidání obrázku do PDF, nastavíme velikost obrázku v PDF (šířka x výška)
+           doc.addImage(imageData, 'JPG', 10, 10, 180, 160); // Změňte šířku a výšku podle potřeby
+ 
+           // Umožníme uživateli stáhnout PDF
+           doc.save('Reminek.pdf');
+         });
+ 
+         // Pokud je model již načtený, rovnou vytvoříme PDF
+         if (modelViewer.hasAttribute('src')) {
+           const imageData = modelViewer.toDataURL('image/jpg');
+           const { jsPDF } = window.jspdf;
+           const doc = new jsPDF();
+           doc.addImage(imageData, 'JPG', 10, 10, 180, 160); // Upravte šířku/výšku podle potřeby
+           doc.save('Reminek.pdf');
+         }
+       }
+     </script>
   </body>
 </html>
