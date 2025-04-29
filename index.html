@@ -318,7 +318,9 @@
           </div>
           <button id="savePNG" onclick="captureImage()">Export to Image</button>
           <button id="savePDF" onclick="exportToPDF()">Export to PDF</button>
-      
+          <button id="exportGLB" onclick="exportGLB()">Export do GLB</button>
+
+
     </model-viewer>
 
     </div>
@@ -537,31 +539,61 @@
        }
  
        function exportToPDF() {
-         const modelViewer = document.getElementById('watchModel');
- 
-         modelViewer.addEventListener('load', function () {
-           const imageData = modelViewer.toDataURL('image/jpg'); // Pořídíme snímek modelu
- 
-           // Vytvoření PDF pomocí jsPDF
-           const { jsPDF } = window.jspdf;
-           const doc = new jsPDF();
- 
-           // Přidání obrázku do PDF, nastavíme velikost obrázku v PDF (šířka x výška)
-           doc.addImage(imageData, 'JPG', 10, 10, 180, 160); // Změňte šířku a výšku podle potřeby
- 
-           // Umožníme uživateli stáhnout PDF
-           doc.save('Reminek.pdf');
-         });
- 
-         // Pokud je model již načtený, rovnou vytvoříme PDF
-         if (modelViewer.hasAttribute('src')) {
-           const imageData = modelViewer.toDataURL('image/jpg');
-           const { jsPDF } = window.jspdf;
-           const doc = new jsPDF();
-           doc.addImage(imageData, 'JPG', 10, 10, 180, 160); // Upravte šířku/výšku podle potřeby
-           doc.save('Reminek.pdf');
-         }
-       }
+  const modelViewer = document.getElementById('watchModel');
+  const imageData = modelViewer.toDataURL('image/jpg');
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // Přidání obrázku
+  doc.addImage(imageData, 'JPG', 10, 10, 180, 100); // uprav výšku podle potřeby
+
+  // Načtení hodnot z inputů
+  const posunX = document.getElementById('offsetX3Number')?.value || '0';
+  const posunY = document.getElementById('offsetY3Number')?.value || '0';
+  const meritko = document.getElementById('scale3Number')?.value || '1';
+  const rotace = document.getElementById('rotation3')?.value || '0';
+
+  // Přidání textu pod obrázek (posuň výšku podle obrázku)
+  const yStart = 120;
+  doc.setFontSize(14);
+  doc.text("Levý potisk", 10, yStart);
+
+  doc.setFontSize(12);
+  doc.text(`Posun X: ${posunX}`, 10, yStart + 20);
+  doc.text(`Posun Y: ${posunY}`, 10, yStart + 30);
+  doc.text(`Meritko: ${meritko}`, 10, yStart + 40);
+  doc.text(`Rotace: ${rotace}°`, 10, yStart + 50);
+
+  // Uložení PDF
+  doc.save('Reminek.pdf');
+}
      </script>
+
+<script>
+  async function exportGLB() {
+    const modelViewer = document.getElementById('watchModel');
+    if (!modelViewer || !modelViewer.exportScene) {
+      alert('Export není podporován v této verzi model-viewer.');
+      return;
+    }
+
+    try {
+      const glb = await modelViewer.exportScene();
+      const file = new File([glb], "Reminek-export.glb", {
+        type: "model/gltf-binary",
+      });
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(file);
+      link.download = file.name;
+      link.click();
+    } catch (e) {
+      console.error("Chyba při exportu GLB:", e);
+      alert("Export do GLB selhal.");
+    }
+  }
+</script>
+    
   </body>
 </html>
