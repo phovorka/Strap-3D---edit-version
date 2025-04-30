@@ -23,8 +23,7 @@
       model-viewer {
         min-width: 100%;
         min-height: 90vh;
-     
-        max-height: 600px;
+        max-height: 500px;
       }
 
       .tabs {
@@ -319,8 +318,8 @@
           <button id="savePNG" onclick="captureImage()">Export to Image</button>
           <button id="savePDF" onclick="exportToPDF()">Export to PDF</button>
           <button id="exportGLB" onclick="exportGLB()">Export do GLB</button>
-
-
+          <button id="saveJSON" onclick="exportToJSON()">Export to JSON</button>
+          <button id="loadJSON" onclick="importFromJSON()">Import from JSON</button>
     </model-viewer>
 
     </div>
@@ -552,18 +551,17 @@
   const posunX = document.getElementById('offsetX3Number')?.value || '0';
   const posunY = document.getElementById('offsetY3Number')?.value || '0';
   const meritko = document.getElementById('scale3Number')?.value || '1';
-  const rotace = document.getElementById('rotation3')?.value || '0';
+  const rotace = document.getElementById('rotation3Number')?.value || '0';
 
   // Přidání textu pod obrázek (posuň výšku podle obrázku)
   const yStart = 120;
   doc.setFontSize(14);
   doc.text("Levý potisk", 10, yStart);
-
   doc.setFontSize(12);
-  doc.text(`Posun X: ${posunX}`, 10, yStart + 20);
-  doc.text(`Posun Y: ${posunY}`, 10, yStart + 30);
-  doc.text(`Meritko: ${meritko}`, 10, yStart + 40);
-  doc.text(`Rotace: ${rotace}°`, 10, yStart + 50);
+  doc.text(`Posun X: ${posunX}`, 10, yStart + 10);
+  doc.text(`Posun Y: ${posunY}`, 10, yStart + 20);
+  doc.text(`Meritko: ${meritko}`, 10, yStart + 30);
+  doc.text(`Rotace: ${rotace}°`, 10, yStart + 40);
 
   // Uložení PDF
   doc.save('Reminek.pdf');
@@ -594,6 +592,68 @@
     }
   }
 </script>
+<script>
+  // Export funkce: Uloží nastavení do JSON
+  function exportToJSON() {
+    const config = {
+      color: document.getElementById('sharedColorPicker').value,
+      textureTransforms: textureTransforms,
+    };
     
+    const blob = new Blob([JSON.stringify(config)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'config.json';
+    link.click();
+  }
+
+  // Import funkce: Načte JSON soubor a aplikuje nastavení
+  function importFromJSON() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.addEventListener('change', function () {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const config = JSON.parse(event.target.result);
+        
+        // Aplikace barvy a transformace textur
+        document.getElementById('sharedColorPicker').value = config.color;
+        textureTransforms = config.textureTransforms;
+
+        // Aplikuj transformace na textury (pokud existují)
+        applyTextureTransform(3);
+        applyTextureTransform(4);
+      };
+      reader.readAsText(file);
+    });
+    input.click();
+  }
+
+  // Funkce pro aplikaci transformace textury na základě konfigurace
+  function applyTextureTransform(materialIndex) {
+    const transforms = textureTransforms[materialIndex];
+    if (transforms) {
+      const modelViewer = document.querySelector('#watchModel');
+      const model = modelViewer.model;
+      if (!model) return;
+
+      const material = model.materials[materialIndex];
+      if (!material) return;
+
+      const tex = material.pbrMetallicRoughness.baseColorTexture;
+      const sampler = tex?.texture?.sampler;
+
+      if (sampler) {
+        sampler.setOffset({ u: transforms.offsetX, v: transforms.offsetY });
+        sampler.setScale({ u: transforms.scale, v: transforms.scale });
+        sampler.setRotation(transforms.rotation);
+      }
+    }
+  }
+</script>
+
+
   </body>
 </html>
