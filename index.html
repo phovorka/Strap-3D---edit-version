@@ -13,30 +13,20 @@
       window.THREE = THREE;
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
       body {
         font-family: Arial, sans-serif;
         text-align: center;
         padding: 10px;
-      }
 
-      model-viewer {
-        min-width: 100%;
-        min-height: 90vh;
-        max-height: 500px;
+        background: #f9f9f9;
       }
-
-      .tabs {
-  width: 220px;
-  max-height: 90vh;
-  overflow-y: auto;   /* jen svislý scroll */
-  overflow-x: visible; /* pokud něco přesahuje šířku, bude vidět */
-}
 
       .tab {
         padding: 5px;
         margin: 5px;
-        width: 200px;
+        max-width: 400px;
         text-align: left;
       }
 
@@ -59,601 +49,854 @@
       .control-pair input[type='number'] {
         width: 40px;
         padding: 2px;
-  font-size: 0.8rem;
+        font-size: 0.8rem;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 8px;
+        padding: 8px;
+      }
+      .controls {
+        margin-top: 8px;
+      }
+      .control-pair {
+        display: flex;
+        align-items: center;
+      }
+      .control-pair input[type='range'] {
+        flex: 1;
+        margin-right: 8px;
+      }
+      .control-pair input[type='number'] {
+        width: 50px;
+      }
+      canvas.preview {
+        border: 1px solid #ccc;
+        margin-top: 8px;
+        max-width: 100%;
+      }
+      button.apply-btn {
+        margin-top: 8px;
+        padding: 6px 12px;
+      }
+      /* pro rozkliknuti*/
+      .collapsible {
+        display: none;
       }
 
+      .collapsible.open {
+        display: block;
+      }
+      .toggle-button {
+        background: none;
+        border: none;
+        font-size: 1em;
+        cursor: pointer;
+      }
       .card {
-        background-color: rgba(255, 255, 255, 0.7); /* poloprůhledné bílé pozadí */
+        background-color: rgba(
+          255,
+          255,
+          255,
+          0.7
+        ); /* poloprůhledné bílé pozadí */
         border: 1px solid #e5e7eb;
         border-radius: 12px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        }
-
-      .tabs-row {
-        display: block;
-        font-size: 0.8rem;
-        
       }
 
-      .tabs-row .card {
+      /*panels*/
+      .left-panel {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .left-panel {
         max-width: 100%;
-        
+        min-width: 300px;
+        min-height: 300px;
+        height: auto;
+      }
+      model-viewer {
+        width: 100%;
+        height: 100%;
       }
 
-      .toggle-button {
-       background: none;
-        border: none;
-        font-size: 1em;
-       cursor: pointer;
-       
+      .right-panel {
+        max-width: 100%;
+        align-items: center;
+
+        background: white;
+      }
+      .option {
+        display: flex;
+        align-items: center;
+      }
+      .option-img {
+        width: 20px;
+        height: 20px;
+        margin: 10px;
+      }
+
+      .option-title {
+        font-weight: bold;
+      }
+
+      .option-desc {
+        font-size: 14px;
+        color: #555;
+      }
+      header {
+        text-align: center;
+        padding: 20px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        color: #333;
+      }
+      @media (min-width: 768px) {
+        .main-content {
+          flex-direction: column; /* na mobilu pod sebe */
         }
+      }
 
-        .card {
-  height: auto;
-  transition: height 0.3s ease;
-  overflow: hidden;
-}
+      .main-content {
+        display: flex;
+        flex-direction: row; /* defaultně vedle sebe */
+        flex-wrap: wrap; /* umožní zalomení na menších šířkách */
+        margin: 5px;
+        gap: 5px;
+        min-height: 600px;
+      }
 
-.collapsible {
-  display: none;
-}
-
-.collapsible.open {
-  display: block;
-}
-
-            h4 {
-        font-size: 0.9rem;
-        margin:0px;
-        padding:4px;
-        
+      .exPDF {
+        margin-top: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #4caf508c;
+        color: #333;
+        border: 1px solid white;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      .exPDF:hover {
+        background-color: #45a049;
+        color: white;
       }
     </style>
   </head>
   <body>
-    <h2>3D Konfigurátor řemínku</h2>
-    
-      <model-viewer
-        id="watchModel"
-        class="card"
-        src="https://cdn.jsdelivr.net/gh/phovorka/GLB/UV3.glb"
-        camera-controls
-        ar
-      >
-    
-     
-        <div class="tabs">
-          <div class="tabs-row">
-          <!-- Materiál 1 a 2 -->
-            <div class="tab card">
-              <h4>
-                <button class="toggle-button" data-target="material1Controls">►</button>
-                Barva řemínku
-              </h4>
-              <div class="controls collapsible" id="material1Controls">
-                <label>Barva:</label>
-              <input type="color" id="sharedColorPicker" value="#ffffff" />
+    <header>
+      <h1>3D Konfigurátor řemínku</h1>
+    </header>
+    <div class="main-content">
+      <div class="left-panel card">
+        <model-viewer
+          id="watchModel"
+          src="https://cdn.jsdelivr.net/gh/phovorka/GLB/20StrapAmazfit.glb"
+          camera-controls
+          tone-mapping="neutral"
+          shadow-intensity="1"
+          ar-modes="webxr scene-viewer quick-look"
+          ar
+          camera-orbit="62.4deg 36.93deg 45.19m"
+          field-of-view="22.31deg"
+        >
+        </model-viewer>
+      </div>
+      <div class="right-panel card">
+        <div>Vlastní potisk</div>
+        <div class="tab card">
+          <div class="option">
+            <div class="toggle-button" data-target="material4Controls">►</div>
+
+            <img
+              class="option-img"
+              src="https://img.icons8.com/ios/50/controller.png"
+              alt=""
+            />
+            <div>
+              <div class="option-title">Potisk "pravý"</div>
+              <div class="option-desc">(2D náhled)</div>
             </div>
           </div>
-            <!-- Materiál 3 -->
-            <div class="tab card">
-              <h4>
-                <button class="toggle-button" data-target="material3Controls">►</button>
-                Potisk "levý"
-              </h4>
-              <div class="controls collapsible" id="material3Controls">
 
-
-              <label>Nahraj obrázek</label>
-              <input type="file" id="textureInput3" accept="image/*" />
-                <label>Posun X:</label>
-                <div class="control-pair">
-                  <input
-                    type="range"
-                    min="-5"
-                    max="5"
-                    step="0.1"
-                    value="0"
-                    id="offsetX3"
-                  />
-                  <input
-                    type="number"
-                    min="-5"
-                    max="5"
-                    step="0.1"
-                    value="0"
-                    id="offsetX3Number"
-                  />
-                </div>
-                <label>Posun Y:</label>
-                <div class="control-pair">
-                  <input
-                    type="range"
-                    min="-5"
-                    max="5"
-                    step="0.1"
-                    value="0"
-                    id="offsetY3"
-                  />
-                  <input
-                    type="number"
-                    min="-5"
-                    max="5"
-                    step="0.1"
-                    value="0"
-                    id="offsetY3Number"
-                  />
-                </div>
-                <label>Měřítko:</label>
-                <div class="control-pair">
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="4"
-                    step="0.1"
-                    value="1"
-                    id="scale3"
-                  />
-                  <input
-                    type="number"
-                    min="0.1"
-                    max="4"
-                    step="0.1"
-                    value="1"
-                    id="scale3Number"
-                  />
-                </div>
-                <label>Rotace (°):</label>
-                <div class="control-pair">
-                  <input
-                    type="range"
-                    min="0"
-                    max="360"
-                    step="1"
-                    value="0"
-                    id="rotation3"
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    max="360"
-                    step="1"
-                    value="0"
-                    id="rotation3Number"
-                  />
-                </div>
-              </div>
-            </div>
-  
-            <!-- Materiál 4 -->
-            <div class="tab card">
-              <h4>
-                <button class="toggle-button" data-target="material4Controls">►</button>
-                Potisk "pravý"
-              </h4>
-              <div class="controls collapsible" id="material4Controls">
-
+          <div class="controls collapsible" id="material4Controls">
+            <div class="controls">
               <label>Nahraj obrázek</label>
               <input type="file" id="textureInput4" accept="image/*" />
-           
-                <label>Posun X:</label>
-                <div class="control-pair">
-                  <input
-                    type="range"
-                    min="-5"
-                    max="5"
-                    step="0.1"
-                    value="0"
-                    id="offsetX4"
-                  />
-                  <input
-                    type="number"
-                    min="-5"
-                    max="5"
-                    step="0.1"
-                    value="0"
-                    id="offsetX4Number"
-                  />
-                </div>
-                <label>Posun Y:</label>
-                <div class="control-pair">
-                  <input
-                    type="range"
-                    min="-5"
-                    max="5"
-                    step="0.1"
-                    value="0"
-                    id="offsetY4"
-                  />
-                  <input
-                    type="number"
-                    min="-5"
-                    max="5"
-                    step="0.1"
-                    value="0"
-                    id="offsetY4Number"
-                  />
-                </div>
-                <label>Měřítko:</label>
-                <div class="control-pair">
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="4"
-                    step="0.1"
-                    value="1"
-                    id="scale4"
-                  />
-                  <input
-                    type="number"
-                    min="0.1"
-                    max="4"
-                    step="0.1"
-                    value="1"
-                    id="scale4Number"
-                  />
-                </div>
-                <label>Rotace (°):</label>
-                <div class="control-pair">
-                  <input
-                    type="range"
-                    min="0"
-                    max="360"
-                    step="1"
-                    value="0"
-                    id="rotation4"
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    max="360"
-                    step="1"
-                    value="0"
-                    id="rotation4Number"
-                  />
-                </div>
+              <canvas
+                id="preview4"
+                class="preview"
+                width="1024"
+                height="1024"
+              ></canvas>
+              <label>Posun X:</label>
+              <div class="control-pair">
+                <input
+                  type="range"
+                  id="offsetX4"
+                  min="-200"
+                  max="200"
+                  step="1"
+                  value="0"
+                />
+                <input
+                  type="number"
+                  id="offsetX4Number"
+                  min="-200"
+                  max="200"
+                  step="1"
+                  value="0"
+                />
               </div>
+
+              <label>Posun Y:</label>
+              <div class="control-pair">
+                <input
+                  type="range"
+                  id="offsetY4"
+                  min="-200"
+                  max="200"
+                  step="1"
+                  value="0"
+                />
+                <input
+                  type="number"
+                  id="offsetY4Number"
+                  min="-200"
+                  max="200"
+                  step="1"
+                  value="0"
+                />
+              </div>
+
+              <label>Měřítko:</label>
+              <div class="control-pair">
+                <input
+                  type="range"
+                  id="scale4"
+                  min="0.1"
+                  max="4"
+                  step="0.1"
+                  value="1"
+                />
+                <input
+                  type="number"
+                  id="scale4Number"
+                  min="0.1"
+                  max="4"
+                  step="0.1"
+                  value="1"
+                />
+              </div>
+
+              <label>Rotace (°):</label>
+              <div class="control-pair">
+                <input
+                  type="range"
+                  id="rotation4"
+                  min="0"
+                  max="360"
+                  step="1"
+                  value="0"
+                />
+                <input
+                  type="number"
+                  id="rotation4Number"
+                  min="0"
+                  max="360"
+                  step="1"
+                  value="0"
+                />
+              </div>
+
+              <button id="apply4" class="apply-btn">Aplikovat na 3D</button>
             </div>
           </div>
-          <button id="savePNG" onclick="captureImage()">Export to Image</button>
-          <button id="savePDF" onclick="exportToPDF()">Export to PDF</button>
-          <button id="exportGLB" onclick="exportGLB()">Export do GLB</button>
-          <button id="saveJSON" onclick="exportToJSON()">Export to JSON</button>
-          <button id="loadJSON" onclick="importFromJSON()">Import from JSON</button>
-    </model-viewer>
+        </div>
 
+        <div class="tab card">
+          <div class="option">
+            <div class="toggle-button" data-target="material3Controls">►</div>
+
+            <img
+              class="option-img"
+              src="https://img.icons8.com/ios/50/controller.png"
+              alt=""
+            />
+            <div>
+              <div class="option-title">Potisk "levý"</div>
+              <div class="option-desc">(2D náhled)</div>
+            </div>
+          </div>
+
+          <div class="controls collapsible" id="material3Controls">
+            <div class="controls">
+              <label>Nahraj obrázek</label>
+              <input type="file" id="textureInput3" accept="image/*" />
+              <canvas
+                id="preview3"
+                class="preview"
+                width="1024"
+                height="1024"
+              ></canvas>
+
+              <label>Posun X:</label>
+              <div class="control-pair">
+                <input
+                  type="range"
+                  id="offsetX3"
+                  min="-200"
+                  max="200"
+                  step="1"
+                  value="0"
+                />
+                <input
+                  type="number"
+                  id="offsetX3Number"
+                  min="-200"
+                  max="200"
+                  step="1"
+                  value="0"
+                />
+              </div>
+
+              <label>Posun Y:</label>
+              <div class="control-pair">
+                <input
+                  type="range"
+                  id="offsetY3"
+                  min="-200"
+                  max="200"
+                  step="1"
+                  value="0"
+                />
+                <input
+                  type="number"
+                  id="offsetY3Number"
+                  min="-200"
+                  max="200"
+                  step="1"
+                  value="0"
+                />
+              </div>
+
+              <label>Měřítko:</label>
+              <div class="control-pair">
+                <input
+                  type="range"
+                  id="scale3"
+                  min="0.1"
+                  max="4"
+                  step="0.1"
+                  value="1"
+                />
+                <input
+                  type="number"
+                  id="scale3Number"
+                  min="0.1"
+                  max="4"
+                  step="0.1"
+                  value="1"
+                />
+              </div>
+
+              <label>Rotace (°):</label>
+              <div class="control-pair">
+                <input
+                  type="range"
+                  id="rotation3"
+                  min="0"
+                  max="360"
+                  step="1"
+                  value="0"
+                />
+                <input
+                  type="number"
+                  id="rotation3Number"
+                  min="0"
+                  max="360"
+                  step="1"
+                  value="0"
+                />
+              </div>
+
+              <button id="apply3" class="apply-btn">Aplikovat na 3D</button>
+            </div>
+          </div>
+        </div>
+        <button id="exportPdfBtn" class="exPDF">
+          <img
+            src="https://img.icons8.com/ios-filled/24/000000/export-pdf.png"
+            alt="PDF Icon"
+          />
+          Export do PDF
+        </button>
+      </div>
     </div>
-
     <script>
-      const textureTransforms = {
-        3: { offsetX: 0, offsetY: 0, scale: 2, rotation: 0 },
-        4: { offsetX: 0, offsetY: 0, scale: 2, rotation: 0 },
+      //potisk levý
+      const previewCanvas3 = document.getElementById('preview3');
+      const ctx3 = previewCanvas3.getContext('2d');
+      let img3 = new Image();
+      // Levý potisk – výchozí obrázek
+      img3.crossOrigin = 'anonymous';
+      img3.src = 'https://cdn.jsdelivr.net/gh/phovorka/GLB/potiskL.jpg'; // změň na URL výchozího obrázku
+      img3.onload = () => {
+        renderPreview3();
+      };
+      let maskImg3 = new Image();
+      maskImg3.crossOrigin = 'anonymous';
+      maskImg3.src = 'https://cdn.jsdelivr.net/gh/phovorka/GLB/potiskLmask.png';
+
+      maskImg3.onload = () => {
+        // Nastavíme velikost canvasu podle velikosti masky
+        previewCanvas3.width = maskImg3.width;
+        previewCanvas3.height = maskImg3.height;
+
+        // Poté vykreslíme masku a obrázek
+        renderPreview3();
       };
 
-      function degreesToRadians(deg) {
-        return (deg * Math.PI) / 180;
+      const settings3 = { offsetX: 0, offsetY: 0, scale: 1, rotation: 0 };
+
+      function renderPreview3(forceOpaque = false) {
+        const w = previewCanvas3.width;
+        const h = previewCanvas3.height;
+        ctx3.clearRect(0, 0, w, h);
+
+        // === 1. MASKA jako pozadí ===
+        if (maskImg3 && maskImg3.complete && maskImg3.naturalWidth > 0) {
+          ctx3.save();
+          ctx3.globalAlpha = 1.0; // Maska bude neprůhledná
+          ctx3.drawImage(maskImg3, 0, 0, w, h); // natáhneme masku na celý canvas
+          ctx3.restore();
+        }
+
+        // === 2. HLAVNÍ OBRÁZEK (s průhledností, transformacemi) ===
+        if (img3 && img3.complete && img3.naturalWidth > 0) {
+          ctx3.save();
+          ctx3.translate(w / 2 + settings3.offsetX, h / 2 + settings3.offsetY);
+          ctx3.rotate((settings3.rotation * Math.PI) / 180);
+          ctx3.scale(settings3.scale, settings3.scale);
+
+          ctx3.globalAlpha = forceOpaque ? 1.0 : 0.5;
+          ctx3.drawImage(img3, -img3.width / 2, -img3.height / 2);
+          ctx3.restore();
+        }
       }
 
-      function applyTextureTransform(materialIndex) {
-        const model = document.querySelector('#watchModel').model;
-        if (!model) return;
-
-        const material = model.materials[materialIndex];
-        if (!material) return;
-
-        const tex = material.pbrMetallicRoughness.baseColorTexture;
-        if (!tex || !tex.texture || !tex.texture.sampler) return;
-
-        const sampler = tex.texture.sampler;
-        const tf = textureTransforms[materialIndex];
-
-        const center = 0.5;
-        const offsetX =
-          tf.offsetX + center - center * tf.scale * Math.cos(tf.rotation);
-        const offsetY =
-          tf.offsetY + center - center * tf.scale * Math.cos(tf.rotation);
-
-        sampler.setOffset({ u: offsetX, v: offsetY });
-        sampler.setScale({ u: tf.scale, v: tf.scale });
-        sampler.setRotation(tf.rotation);
-        sampler.setWrapS(33071); // CLAMP_TO_EDGE
-        sampler.setWrapT(33071);
-      }
-
-      function hexToRgb(hex) {
-        const bigint = parseInt(hex.replace('#', ''), 16);
-        return [
-          ((bigint >> 16) & 255) / 255,
-          ((bigint >> 8) & 255) / 255,
-          (bigint & 255) / 255,
-          1,
-        ];
-      }
-
-      function bindDualInput(idBase, onChange) {
-        const range = document.getElementById(idBase);
-        const number = document.getElementById(idBase + 'Number');
-
-        const sync = (value) => {
-          range.value = value;
-          number.value = value;
-          onChange(parseFloat(value));
+      function bindDual(id, prop, settingsObj, callback) {
+        const range = document.getElementById(id);
+        const num = document.getElementById(id + 'Number');
+        const sync = (val) => {
+          settingsObj[prop] = parseFloat(val);
+          range.value = val;
+          num.value = val;
+          renderPreview3();
         };
-
         range.addEventListener('input', (e) => sync(e.target.value));
-        number.addEventListener('input', (e) => sync(e.target.value));
+        num.addEventListener('input', (e) => sync(e.target.value));
       }
 
-      function bindControls(materialIndex) {
-        const update = () => applyTextureTransform(materialIndex);
-
-        bindDualInput(`offsetX${materialIndex}`, (val) => {
-          textureTransforms[materialIndex].offsetX = val;
-          update();
-        });
-
-        bindDualInput(`offsetY${materialIndex}`, (val) => {
-          textureTransforms[materialIndex].offsetY = val;
-          update();
-        });
-
-        bindDualInput(`scale${materialIndex}`, (val) => {
-          textureTransforms[materialIndex].scale = val;
-          update();
-        });
-
-        bindDualInput(`rotation${materialIndex}`, (val) => {
-          textureTransforms[materialIndex].rotation = degreesToRadians(val);
-          update();
-        });
-      }
-
-      function bindTextureUpload(materialIndex) {
-        const input = document.getElementById(`textureInput${materialIndex}`);
-        input.addEventListener('change', async function (event) {
-          const file = event.target.files[0];
+      //event pro tlacitko nahrani obrazku
+      document
+        .getElementById('textureInput3')
+        .addEventListener('change', (e) => {
+          const file = e.target.files[0];
           if (!file) return;
-
           const reader = new FileReader();
-          reader.onload = async function (e) {
-            const modelViewer = document.querySelector('#watchModel');
-            await modelViewer.updateComplete;
-            const model = modelViewer.model;
-            if (!model) return;
-
-            const material = model.materials[materialIndex];
-            if (!material) return;
-
-            const texture = await modelViewer.createTexture(e.target.result);
-            material.pbrMetallicRoughness.baseColorTexture.setTexture(texture);
-            applyTextureTransform(materialIndex);
+          reader.onload = (ev) => {
+            img3.src = ev.target.result;
+            img3.onload = () => {
+              renderPreview3();
+            };
           };
           reader.readAsDataURL(file);
         });
-      }
 
+      bindDual('offsetX3', 'offsetX', settings3);
+      bindDual('offsetY3', 'offsetY', settings3);
+      bindDual('scale3', 'scale', settings3);
+      bindDual('rotation3', 'rotation', settings3);
 
+      //Event pro aplikaci obrazku na 3D model
+      document.getElementById('apply3').addEventListener('click', async () => {
+        if (!img3.complete || img3.naturalWidth === 0) return;
 
-      function bindSharedColorPicker(materialIndices) {
-        const input = document.getElementById('sharedColorPicker');
-        input.addEventListener('input', async function (e) {
-          const modelViewer = document.querySelector('#watchModel');
-          await modelViewer.updateComplete;
-          const model = modelViewer.model;
-          if (!model) return;
+        const w = maskImg3.naturalWidth || img3.naturalWidth;
+        const h = maskImg3.naturalHeight || img3.naturalHeight;
+        // Vytvoření virtuálního canvasu
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = w;
+        tempCanvas.height = h;
+        const tempCtx = tempCanvas.getContext('2d');
 
-          const color = hexToRgb(e.target.value);
-          materialIndices.forEach((index) => {
-            const material = model.materials[index];
-            if (material) {
-              material.pbrMetallicRoughness.setBaseColorFactor(color);
-            }
-          });
-        });
-      }
+        const offsetX = settings3.offsetX;
+        const offsetY = settings3.offsetY;
+        const scale = settings3.scale;
 
-      async function loadDefaultTexture(materialIndex, url) {
-  const modelViewer = document.querySelector('#watchModel');
-  await modelViewer.updateComplete;
-  const model = modelViewer.model;
-  if (!model) return;
+        // 1. Maska
+        if (maskImg3.complete && maskImg3.naturalWidth > 0) {
+          tempCtx.drawImage(maskImg3, 0, 0, w, h);
+        }
 
-  const material = model.materials[materialIndex];
-  if (!material) return;
+        // 2. Obrázek
+        tempCtx.save();
+        tempCtx.translate(w / 2 + offsetX, h / 2 + offsetY);
+        tempCtx.rotate((settings3.rotation * Math.PI) / 180);
+        tempCtx.scale(scale, scale);
+        tempCtx.globalAlpha = 1.0;
+        tempCtx.drawImage(img3, -img3.width / 2, -img3.height / 2);
+        tempCtx.restore();
 
-  const texture = await modelViewer.createTexture(url);
-  material.pbrMetallicRoughness.baseColorTexture.setTexture(texture);
-  // Nastavíme správné počáteční transformace
-  textureTransforms[materialIndex] = {
-    offsetX: 0,
-    offsetY: 0,
-    scale: 1,        // důležité!
-    rotation: 0
-  };
-  applyTextureTransform(materialIndex);
-}
+        const modelViewer = document.getElementById('watchModel');
+        await modelViewer.updateComplete;
 
-
-      document
-        .querySelector('#watchModel')
-        .addEventListener('load', async () => {
-          const modelViewer = document.querySelector('#watchModel');
-          await modelViewer.updateComplete;
-
-          [3, 4].forEach((index) => {
-            bindControls(index);
-            bindTextureUpload(index);
-         
- // Nastavíme napevno bílou barvu
- const material = modelViewer.model.materials[index];
-      if (material) {
-        material.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
-      }
-    });
-    // Sem vložíš URL obrázků
-    await loadDefaultTexture(3, 'https://cdn.jsdelivr.net/gh/phovorka/GLB/potisk levy.jpg');
-    await loadDefaultTexture(4, 'https://cdn.jsdelivr.net/gh/phovorka/GLB/Potisk pravy.jpg');
-          bindSharedColorPicker([2]);
-        });
+        const dataUrl = tempCanvas.toDataURL();
+        const texture = await modelViewer.createTexture(dataUrl);
+        const materialIndex = 14; // 13 = pravá strana, 14 = levá strana
+        const mat = modelViewer.model.materials[materialIndex];
+        mat.pbrMetallicRoughness.baseColorTexture.setTexture(texture);
+      });
     </script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-    const toggleButtons = document.querySelectorAll('.toggle-button');
-
-    toggleButtons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const targetId = btn.dataset.target;
-        const target = document.getElementById(targetId);
-
-        const isOpen = target.classList.contains('open');
-        target.classList.toggle('open');
-        btn.textContent = isOpen ? '►' : '▼';
-      });
-    });
-  });
-    </script>
-    
-     <script>
-      
-       function captureImage() {
-         const modelViewer = document.getElementById('watchModel');
- 
-         modelViewer.addEventListener('load', function () {
-           const imageData = modelViewer.toDataURL('image/jpg'); // Získání obrázku ve formátu PNG
- 
-           const link = document.createElement('a');
-           link.href = imageData;
-           link.download = 'reminek.jpg'; // Stažení obrázku ve formátu PNG
-           link.click();
-         });
- 
-         if (modelViewer.hasAttribute('src')) {
-           const imageData = modelViewer.toDataURL('image/jpg');
-           const link = document.createElement('a');
-           link.href = imageData;
-           link.download = 'reminek.jpg';
-           link.click();
-         }
-       }
- 
-       function exportToPDF() {
-  const modelViewer = document.getElementById('watchModel');
-  const imageData = modelViewer.toDataURL('image/jpg');
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  // Přidání obrázku
-  doc.addImage(imageData, 'JPG', 10, 10, 180, 100); // uprav výšku podle potřeby
-
-  // Načtení hodnot z inputů
-  const posunX = document.getElementById('offsetX3Number')?.value || '0';
-  const posunY = document.getElementById('offsetY3Number')?.value || '0';
-  const meritko = document.getElementById('scale3Number')?.value || '1';
-  const rotace = document.getElementById('rotation3Number')?.value || '0';
-
-  // Přidání textu pod obrázek (posuň výšku podle obrázku)
-  const yStart = 120;
-  doc.setFontSize(14);
-  doc.text("Levý potisk", 10, yStart);
-  doc.setFontSize(12);
-  doc.text(`Posun X: ${posunX}`, 10, yStart + 10);
-  doc.text(`Posun Y: ${posunY}`, 10, yStart + 20);
-  doc.text(`Meritko: ${meritko}`, 10, yStart + 30);
-  doc.text(`Rotace: ${rotace}°`, 10, yStart + 40);
-
-  // Uložení PDF
-  doc.save('Reminek.pdf');
-}
-     </script>
-
-<script>
-  async function exportGLB() {
-    const modelViewer = document.getElementById('watchModel');
-    if (!modelViewer || !modelViewer.exportScene) {
-      alert('Export není podporován v této verzi model-viewer.');
-      return;
-    }
-
-    try {
-      const glb = await modelViewer.exportScene();
-      const file = new File([glb], "Reminek-export.glb", {
-        type: "model/gltf-binary",
-      });
-
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(file);
-      link.download = file.name;
-      link.click();
-    } catch (e) {
-      console.error("Chyba při exportu GLB:", e);
-      alert("Export do GLB selhal.");
-    }
-  }
-</script>
-<script>
-  // Export funkce: Uloží nastavení do JSON
-  function exportToJSON() {
-    const config = {
-      color: document.getElementById('sharedColorPicker').value,
-      textureTransforms: textureTransforms,
-    };
-    
-    const blob = new Blob([JSON.stringify(config)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'config.json';
-    link.click();
-  }
-
-  // Import funkce: Načte JSON soubor a aplikuje nastavení
-  function importFromJSON() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'application/json';
-    input.addEventListener('change', function () {
-      const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = function (event) {
-        const config = JSON.parse(event.target.result);
-        
-        // Aplikace barvy a transformace textur
-        document.getElementById('sharedColorPicker').value = config.color;
-        textureTransforms = config.textureTransforms;
-
-        // Aplikuj transformace na textury (pokud existují)
-        applyTextureTransform(3);
-        applyTextureTransform(4);
+      // === PRAVÝ POTISK ===
+      const previewCanvas4 = document.getElementById('preview4');
+      const ctx4 = previewCanvas4.getContext('2d');
+      let img4 = new Image();
+      // Pravý potisk – výchozí obrázek
+      img4.crossOrigin = 'anonymous';
+      img4.src = 'https://cdn.jsdelivr.net/gh/phovorka/GLB/potiskR.jpg'; // změň na URL výchozího obrázku
+      img4.onload = () => {
+        renderPreview4();
       };
-      reader.readAsText(file);
-    });
-    input.click();
-  }
+      let maskImg4 = new Image();
+      maskImg4.crossOrigin = 'anonymous';
+      maskImg4.src = 'https://cdn.jsdelivr.net/gh/phovorka/GLB/potiskRmask.png';
 
-  // Funkce pro aplikaci transformace textury na základě konfigurace
-  function applyTextureTransform(materialIndex) {
-    const transforms = textureTransforms[materialIndex];
-    if (transforms) {
-      const modelViewer = document.querySelector('#watchModel');
-      const model = modelViewer.model;
-      if (!model) return;
+      const settings4 = { offsetX: 0, offsetY: 0, scale: 1, rotation: 0 };
 
-      const material = model.materials[materialIndex];
-      if (!material) return;
+      maskImg4.onload = () => {
+        previewCanvas4.width = maskImg4.width;
+        previewCanvas4.height = maskImg4.height;
+        renderPreview4();
+      };
 
-      const tex = material.pbrMetallicRoughness.baseColorTexture;
-      const sampler = tex?.texture?.sampler;
+      function renderPreview4(forceOpaque = false) {
+        const w = previewCanvas4.width;
+        const h = previewCanvas4.height;
+        ctx4.clearRect(0, 0, w, h);
 
-      if (sampler) {
-        sampler.setOffset({ u: transforms.offsetX, v: transforms.offsetY });
-        sampler.setScale({ u: transforms.scale, v: transforms.scale });
-        sampler.setRotation(transforms.rotation);
+        // Maska
+        if (maskImg4 && maskImg4.complete && maskImg4.naturalWidth > 0) {
+          ctx4.save();
+          ctx4.globalAlpha = 1.0;
+          ctx4.drawImage(maskImg4, 0, 0, w, h);
+          ctx4.restore();
+        }
+
+        // Hlavní obrázek
+        if (img4 && img4.complete && img4.naturalWidth > 0) {
+          ctx4.save();
+          ctx4.translate(w / 2 + settings4.offsetX, h / 2 + settings4.offsetY);
+          ctx4.rotate((settings4.rotation * Math.PI) / 180);
+          ctx4.scale(settings4.scale, settings4.scale);
+          ctx4.globalAlpha = forceOpaque ? 1.0 : 0.5;
+          ctx4.drawImage(img4, -img4.width / 2, -img4.height / 2);
+          ctx4.restore();
+        }
       }
-    }
-  }
-</script>
 
+      function bindDualRight(id, prop) {
+        const range = document.getElementById(id);
+        const num = document.getElementById(id + 'Number');
+        const sync = (val) => {
+          settings4[prop] = parseFloat(val);
+          range.value = val;
+          num.value = val;
+          renderPreview4();
+        };
+        range.addEventListener('input', (e) => sync(e.target.value));
+        num.addEventListener('input', (e) => sync(e.target.value));
+      }
 
+      // Obrázek
+      document
+        .getElementById('textureInput4')
+        .addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            img4.src = ev.target.result;
+            img4.onload = () => {
+              renderPreview4();
+            };
+          };
+          reader.readAsDataURL(file);
+        });
+
+      bindDualRight('offsetX4', 'offsetX');
+      bindDualRight('offsetY4', 'offsetY');
+      bindDualRight('scale4', 'scale');
+      bindDualRight('rotation4', 'rotation');
+
+      // Aplikace na 3D
+      document.getElementById('apply4').addEventListener('click', async () => {
+        if (!img4.complete || img4.naturalWidth === 0) return;
+
+        const w = previewCanvas4.width;
+        const h = previewCanvas4.height;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = w;
+        tempCanvas.height = h;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // Maska
+        if (maskImg4.complete && maskImg4.naturalWidth > 0) {
+          tempCtx.drawImage(maskImg4, 0, 0, w, h);
+        }
+
+        // Obrázek
+        tempCtx.save();
+        tempCtx.translate(w / 2 + settings4.offsetX, h / 2 + settings4.offsetY);
+        tempCtx.rotate((settings4.rotation * Math.PI) / 180);
+        tempCtx.scale(settings4.scale, settings4.scale);
+        tempCtx.globalAlpha = 1.0;
+        tempCtx.drawImage(img4, -img4.width / 2, -img4.height / 2);
+        tempCtx.restore();
+
+        const modelViewer = document.getElementById('watchModel');
+        const materialIndex = 13; // 13 = pravá strana, 14 = levá strana
+        await modelViewer.updateComplete;
+
+        const dataUrl = tempCanvas.toDataURL();
+        const texture = await modelViewer.createTexture(dataUrl);
+        const mat = modelViewer.model.materials[materialIndex]; // pravý potisk
+        mat.pbrMetallicRoughness.baseColorTexture.setTexture(texture);
+      });
+    </script>
+
+    <script type="module">
+      // === NASTAVENÍ DEFAULTNICH TEXTUR NA 3D - PRAVÁ ===
+      const modelViewer = document.getElementById('watchModel');
+      const previewCanvas4 = document.getElementById('preview4');
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+
+      const waitForImage = (img) =>
+        new Promise((resolve) => {
+          if (img.complete && img.naturalWidth > 0) {
+            resolve();
+          } else {
+            img.onload = () => resolve();
+          }
+        });
+
+      async function applyDefaultTextureRight() {
+        await waitForImage(img4);
+        await waitForImage(maskImg4);
+
+        tempCanvas.width = previewCanvas4.width;
+        tempCanvas.height = previewCanvas4.height;
+
+        const w = tempCanvas.width;
+        const h = tempCanvas.height;
+
+        // 1. Maska
+        tempCtx.clearRect(0, 0, w, h);
+        tempCtx.drawImage(maskImg4, 0, 0, w, h);
+
+        // 2. Obrázek
+        tempCtx.save();
+        tempCtx.translate(w / 2 + settings4.offsetX, h / 2 + settings4.offsetY);
+        tempCtx.rotate((settings4.rotation * Math.PI) / 180);
+        tempCtx.scale(settings4.scale, settings4.scale);
+        tempCtx.drawImage(img4, -img4.width / 2, -img4.height / 2);
+        tempCtx.restore();
+
+        await modelViewer.updateComplete;
+
+        const dataUrl = tempCanvas.toDataURL();
+        const texture = await modelViewer.createTexture(dataUrl);
+        const mat = modelViewer.model.materials[13];
+        mat.pbrMetallicRoughness.baseColorTexture.setTexture(texture);
+      }
+
+      modelViewer.addEventListener('load', () => {
+        applyDefaultTextureRight();
+      });
+    </script>
+
+    <script type="module">
+      // === NASTAVENÍ DEFAULTNICH TEXTUR NA 3D - LEVA ===
+      const modelViewer = document.getElementById('watchModel');
+      const previewCanvas3 = document.getElementById('preview3');
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+
+      const waitForImage = (img) =>
+        new Promise((resolve) => {
+          if (img.complete && img.naturalWidth > 0) {
+            resolve();
+          } else {
+            img.onload = () => resolve();
+          }
+        });
+
+      async function applyDefaultTextureLeft() {
+        await waitForImage(img3);
+        await waitForImage(maskImg3);
+
+        tempCanvas.width = previewCanvas3.width;
+        tempCanvas.height = previewCanvas3.height;
+
+        const w = tempCanvas.width;
+        const h = tempCanvas.height;
+
+        // 1. Maska
+        tempCtx.clearRect(0, 0, w, h);
+        tempCtx.drawImage(maskImg4, 0, 0, w, h);
+
+        // 2. Obrázek
+        tempCtx.save();
+        tempCtx.translate(w / 2 + settings3.offsetX, h / 2 + settings3.offsetY);
+        tempCtx.rotate((settings3.rotation * Math.PI) / 180);
+        tempCtx.scale(settings3.scale, settings3.scale);
+        tempCtx.drawImage(img3, -img3.width / 2, -img3.height / 2);
+        tempCtx.restore();
+
+        await modelViewer.updateComplete;
+
+        const dataUrl = tempCanvas.toDataURL();
+        const texture = await modelViewer.createTexture(dataUrl);
+        const mat = modelViewer.model.materials[14];
+        mat.pbrMetallicRoughness.baseColorTexture.setTexture(texture);
+      }
+
+      modelViewer.addEventListener('load', () => {
+        applyDefaultTextureLeft();
+      });
+    </script>
+
+    <script>
+      // ===== EXPORT DO PDF ======
+      function exportPotiskyToPDF() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'px',
+          format: 'a4',
+        });
+
+        const margin = 20;
+        let yOffset = margin;
+
+        // Přepne náhledy do "neprůhledného" režimu
+        renderPreview3(true);
+        renderPreview4(true);
+
+        function cropByWhiteMask(sourceCanvas, maskImg) {
+          return new Promise((resolve) => {
+            const w = sourceCanvas.width;
+            const h = sourceCanvas.height;
+
+            const resultCanvas = document.createElement('canvas');
+            resultCanvas.width = w;
+            resultCanvas.height = h;
+            const resultCtx = resultCanvas.getContext('2d');
+
+            const tempMaskCanvas = document.createElement('canvas');
+            tempMaskCanvas.width = w;
+            tempMaskCanvas.height = h;
+            const maskCtx = tempMaskCanvas.getContext('2d');
+            maskCtx.drawImage(maskImg, 0, 0, w, h);
+
+            const sourceCtx = sourceCanvas.getContext('2d');
+            const sourceData = sourceCtx.getImageData(0, 0, w, h);
+            const maskData = maskCtx.getImageData(0, 0, w, h);
+            const resultData = resultCtx.createImageData(w, h);
+
+            for (let i = 0; i < sourceData.data.length; i += 4) {
+              const r = maskData.data[i];
+              const g = maskData.data[i + 1];
+              const b = maskData.data[i + 2];
+              const isWhite = r === 255 && g === 255 && b === 255;
+
+              if (isWhite) {
+                resultData.data[i] = sourceData.data[i];
+                resultData.data[i + 1] = sourceData.data[i + 1];
+                resultData.data[i + 2] = sourceData.data[i + 2];
+                resultData.data[i + 3] = 255;
+              } else {
+                resultData.data[i + 3] = 0;
+              }
+            }
+
+            resultCtx.putImageData(resultData, 0, 0);
+            resolve(resultCanvas);
+          });
+        }
+
+        async function addLabeledImageToPdf(canvas, label) {
+          const imgData = canvas.toDataURL('image/png');
+          const imgWidth = canvas.width / 3;
+          const imgHeight = canvas.height / 3;
+
+          pdf.setFontSize(12);
+          pdf.text(label, margin, yOffset + 10);
+          yOffset += 15;
+          pdf.addImage(imgData, 'PNG', margin, yOffset, imgWidth, imgHeight);
+          yOffset += imgHeight + 20;
+        }
+
+        (async () => {
+          const croppedLeft = await cropByWhiteMask(previewCanvas3, maskImg3);
+          await addLabeledImageToPdf(croppedLeft, 'Levý potisk');
+
+          const croppedRight = await cropByWhiteMask(previewCanvas4, maskImg4);
+          await addLabeledImageToPdf(croppedRight, 'Pravý potisk');
+
+          renderPreview3(); // vrátit zpět původní náhledy
+          renderPreview4();
+
+          pdf.save('potisky.pdf');
+        })();
+      }
+
+      // Event listener
+      document
+        .getElementById('exportPdfBtn')
+        .addEventListener('click', exportPotiskyToPDF);
+    </script>
+
+    <script>
+      // ====== TOGGLE ======
+      document.addEventListener('DOMContentLoaded', () => {
+        const toggleButtons = document.querySelectorAll('.toggle-button');
+
+        toggleButtons.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const targetId = btn.dataset.target;
+            const target = document.getElementById(targetId);
+
+            const isOpen = target.classList.contains('open');
+            target.classList.toggle('open');
+            btn.textContent = isOpen ? '►' : '▼';
+          });
+        });
+      });
+    </script>
   </body>
 </html>
