@@ -18,14 +18,13 @@
       body {
         font-family: Arial, sans-serif;
         text-align: center;
-        padding: 10px;
 
         background: #f9f9f9;
       }
 
       .tab {
         padding: 5px;
-        margin: 5px;
+        margin: 15px 5px 15px 5px;
         max-width: 400px;
         text-align: left;
       }
@@ -51,11 +50,6 @@
         padding: 2px;
         font-size: 0.8rem;
       }
-      .card {
-        background: rgba(255, 255, 255, 0.8);
-        border-radius: 8px;
-        padding: 8px;
-      }
       .controls {
         margin-top: 8px;
       }
@@ -78,6 +72,7 @@
       button.apply-btn {
         margin-top: 8px;
         padding: 6px 12px;
+        margin-bottom: 8px;
       }
       /* pro rozkliknuti*/
       .collapsible {
@@ -107,29 +102,28 @@
 
       /*panels*/
       .left-panel {
-        flex: 1;
         display: flex;
         align-items: center;
         justify-content: center;
+        flex: 3;
+        min-width: 300px;
+        max-width: 100%;
+        min-height: 300px;
       }
 
-      .left-panel {
-        max-width: 100%;
-        min-width: 300px;
-        min-height: 300px;
-        height: auto;
+      .right-panel {
+        flex: 4;
+        max-width: 300px;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(to bottom, #d3d3d3, #808080);
       }
+
       model-viewer {
         width: 100%;
         height: 100%;
       }
 
-      .right-panel {
-        max-width: 100%;
-        align-items: center;
-
-        background: white;
-      }
       .option {
         display: flex;
         align-items: center;
@@ -205,15 +199,13 @@
           camera-controls
           tone-mapping="neutral"
           shadow-intensity="1"
-          ar-modes="webxr scene-viewer quick-look"
-          ar
           camera-orbit="62.4deg 36.93deg 45.19m"
           field-of-view="22.31deg"
         >
         </model-viewer>
       </div>
       <div class="right-panel card">
-        <div>Vlastní potisk</div>
+        <h4>Vlastní potisk</h4>
         <div class="tab card">
           <div class="option">
             <div class="toggle-button" data-target="material4Controls">►</div>
@@ -320,6 +312,7 @@
               </div>
 
               <button id="apply4" class="apply-btn">Aplikovat na 3D</button>
+              <button id="reset4" class="apply-btn">Reset</button>
             </div>
           </div>
         </div>
@@ -431,6 +424,7 @@
               </div>
 
               <button id="apply3" class="apply-btn">Aplikovat na 3D</button>
+              <button id="reset3" class="apply-btn">Reset</button>
             </div>
           </div>
         </div>
@@ -791,22 +785,27 @@
     </script>
 
     <script>
-      // ===== EXPORT DO PDF ======
       function exportPotiskyToPDF() {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'px',
+          orientation: 'landscape',
+          unit: 'mm',
           format: 'a4',
         });
 
+        const pageWidth = 297;
+        const pageHeight = 210;
         const margin = 20;
-        let yOffset = margin;
 
-        // Přepne náhledy do "neprůhledného" režimu
+        // Vlastní výšky obrázků v milimetrech (nastavitelné)
+        const heightLeft = 110;
+        const heightRight = 90;
+
+        // Přepnout náhledy do "neprůhledného" režimu
         renderPreview3(true);
         renderPreview4(true);
 
+        // Ořízne obrázek podle bílé masky
         function cropByWhiteMask(sourceCanvas, maskImg) {
           return new Promise((resolve) => {
             const w = sourceCanvas.width;
@@ -849,28 +848,51 @@
           });
         }
 
-        async function addLabeledImageToPdf(canvas, label) {
-          const imgData = canvas.toDataURL('image/png');
-          const imgWidth = canvas.width / 3;
-          const imgHeight = canvas.height / 3;
-
-          pdf.setFontSize(12);
-          pdf.text(label, margin, yOffset + 10);
-          yOffset += 15;
-          pdf.addImage(imgData, 'PNG', margin, yOffset, imgWidth, imgHeight);
-          yOffset += imgHeight + 20;
-        }
-
         (async () => {
+          // Získání oříznutých obrázků
           const croppedLeft = await cropByWhiteMask(previewCanvas3, maskImg3);
-          await addLabeledImageToPdf(croppedLeft, 'Levý potisk');
-
           const croppedRight = await cropByWhiteMask(previewCanvas4, maskImg4);
-          await addLabeledImageToPdf(croppedRight, 'Pravý potisk');
 
-          renderPreview3(); // vrátit zpět původní náhledy
+          // Výpočty šířek podle poměru stran
+          const ratioLeft = croppedLeft.width / croppedLeft.height;
+          const ratioRight = croppedRight.width / croppedRight.height;
+
+          const widthLeft = heightLeft * ratioLeft;
+          const widthRight = heightRight * ratioRight;
+
+          // Výpočet pro centrování
+          const totalWidth = widthLeft + widthRight + margin;
+          const startX = (pageWidth - totalWidth) / 2;
+          const startYLeft = (pageHeight - heightLeft) / 2;
+          const startYRight = (pageHeight - heightRight) / 2;
+
+          // Převedení na obrázky
+          const imgDataLeft = croppedLeft.toDataURL('image/png');
+          const imgDataRight = croppedRight.toDataURL('image/png');
+
+          // Přidání obrázků do PDF
+          pdf.addImage(
+            imgDataLeft,
+            'PNG',
+            startX,
+            startYLeft,
+            widthLeft,
+            heightLeft
+          );
+          pdf.addImage(
+            imgDataRight,
+            'PNG',
+            startX + widthLeft + margin,
+            startYRight,
+            widthRight,
+            heightRight
+          );
+
+          // Obnovení náhledů
+          renderPreview3();
           renderPreview4();
 
+          // Uložení PDF
           pdf.save('potisky.pdf');
         })();
       }
@@ -896,6 +918,49 @@
             btn.textContent = isOpen ? '►' : '▼';
           });
         });
+      });
+    </script>
+
+    <script>
+      // ==== Reset tlačítka -  Levý =====
+      document.getElementById('reset3').addEventListener('click', () => {
+        settings3.offsetX = 0;
+        settings3.offsetY = 0;
+        settings3.scale = 1;
+        settings3.rotation = 0;
+
+        document.getElementById('offsetX3').value = 0;
+        document.getElementById('offsetX3Number').value = 0;
+        document.getElementById('offsetY3').value = 0;
+        document.getElementById('offsetY3Number').value = 0;
+        document.getElementById('scale3').value = 1;
+        document.getElementById('scale3Number').value = 1;
+        document.getElementById('rotation3').value = 0;
+        document.getElementById('rotation3Number').value = 0;
+        img3.onload = () => renderPreview3(); // důležité: vykreslit náhled
+        // Pokud je obrázek již načten, vykresli rovnou
+        if (img3.complete) renderPreview3();
+      });
+    </script>
+    <script>
+      // ==== Reset tlačítka -  Pravý =====
+      document.getElementById('reset4').addEventListener('click', () => {
+        settings4.offsetX = 0;
+        settings4.offsetY = 0;
+        settings4.scale = 1;
+        settings4.rotation = 0;
+
+        document.getElementById('offsetX4').value = 0;
+        document.getElementById('offsetX4Number').value = 0;
+        document.getElementById('offsetY4').value = 0;
+        document.getElementById('offsetY4Number').value = 0;
+        document.getElementById('scale4').value = 1;
+        document.getElementById('scale4Number').value = 1;
+        document.getElementById('rotation4').value = 0;
+        document.getElementById('rotation4Number').value = 0;
+        img4.onload = () => renderPreview4(); // důležité: vykreslit náhled
+        // Pokud je obrázek již načten, vykresli rovnou
+        if (img4.complete) renderPreview4();
       });
     </script>
   </body>
